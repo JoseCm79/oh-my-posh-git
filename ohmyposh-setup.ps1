@@ -562,4 +562,5 @@ if (-not (Test-Path $profilePath)) {
 
 Set-Content -Path $profilePath -Value $gitAliases -Encoding UTF8
 
-powershell
+
+Write-Host ('Tool installed successfully, open a new terminal to start using it') -ForegroundColor Green
