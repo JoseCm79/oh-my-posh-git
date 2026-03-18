@@ -564,3 +564,12 @@ Set-Content -Path $profilePath -Value $gitAliases -Encoding UTF8
 
 
 Write-Host ('Tool installed successfully, open a new terminal to start using it') -ForegroundColor Green
+
+Write-Host ('Change the theme by running the gthemes command') -ForegroundColor Blue
+
+Write-Host ('List all the aliases by running the ghep command') -ForegroundColor Green
+Write-Host ('Search for a specific alias by running the ghep -Search command') -ForegroundColor Green
+Write-Host ('Search for a specific category by running the ghep [category] command') -ForegroundColor Green
+
+
+Write-Host ('Change terminal font https://ohmyposh.dev/docs/installation/fonts') -ForegroundColor Yellow
