@@ -44,7 +44,7 @@ else {
 }
 
 Invoke-WebRequest https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/paradox.omp.json -OutFile "$env:POSH_THEMES_PATH\paradox.omp.json"
-
+Set-Content "$HOME\OhMyPoshThemes\.current_theme" "$env:POSH_THEMES_PATH\paradox.omp.json"
 oh-my-posh init pwsh --config "$env:POSH_THEMES_PATH\paradox.omp.json" | Invoke-Expression
 
 $profilePath = $PROFILE
