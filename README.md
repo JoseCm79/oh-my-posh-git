@@ -12,7 +12,7 @@ A streamlined setup to supercharge your Windows PowerShell experience by combini
 2. **Run the setup script**:
    ```
    Invoke-WebRequest https://raw.githubusercontent.com/JoseCm79/oh-my-posh-git/main/ohmyposh-setup.ps1 -OutFile "$env:TEMP\script.ps1"
-powershell -ExecutionPolicy Bypass -File "$env:TEMP\script.ps1"
+   powershell -ExecutionPolicy Bypass -File "$env:TEMP\script.ps1"
    ```
    *Note: The script will install Oh My Posh and PSReadLine if they are missing. so it will ask for admin permissions.*
 
