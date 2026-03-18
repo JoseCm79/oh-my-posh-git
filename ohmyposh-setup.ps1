@@ -563,3 +563,4 @@ if (-not (Test-Path $profilePath)) {
 Set-Content -Path $profilePath -Value $gitAliases -Encoding UTF8
 
 . $PROFILE
+Write-Host ('if the theme does not load, restart the terminal') -ForegroundColor Green
