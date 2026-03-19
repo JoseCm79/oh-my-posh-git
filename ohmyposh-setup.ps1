@@ -22,6 +22,11 @@ if ($psrlInstalled) {
         $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
         if ($isAdmin) {
             Update-Module PSReadLine -Force
+            Set-PSReadLineOption -PredictionSource History
+            Set-PSReadLineOption -PredictionViewStyle ListView
+
+            Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward
+            Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
             Write-Host "PSReadLine updated to v$latestVersion." -ForegroundColor Green
         }
         else {
@@ -43,6 +48,9 @@ else {
         Write-Host "Administrator permissions required to install PSReadLine. Run PowerShell as administrator." -ForegroundColor Red
     }
 }
+
+
+
 if (-not (Test-Path $POSH_THEMES_PATH)) {
     New-Item -ItemType directory -Path $POSH_THEMES_PATH -Force
 }
@@ -426,8 +434,11 @@ function ghelp {
         [pscustomobject]@{ Alias='glods';       Command='git log --graph --date=short';               Cat='log'      }
         [pscustomobject]@{ Alias='glp';         Command='git log --pretty=[format]';                  Cat='log'      }
         [pscustomobject]@{ Alias='gk';          Command='open gitk --all --branches';                 Cat='log'      }
-        # oh-my-posh / pins
+        # oh-my-posh / pins / navigation
         [pscustomobject]@{ Alias='pin';         Command='manage directory pins (pin -h for help)';    Cat='pins'     }
+        [pscustomobject]@{ Alias='..';          Command='cd ..';                                      Cat='pins'    }
+        [pscustomobject]@{ Alias='...';         Command='cd ../..';                                   Cat='pins'    }
+        [pscustomobject]@{ Alias='....';        Command='cd ../../..';                                Cat='pins'    }
         [pscustomobject]@{ Alias='gthemes';     Command='switch oh-my-posh themes';                   Cat='themes'   }
         # fetch
         [pscustomobject]@{ Alias='gf';          Command='git fetch';                                  Cat='remote'   }
@@ -661,7 +672,7 @@ function pin {
     )
 
     $Pins = Get-Pins
-
+    
     if ($Help -or ($Name -eq "help")) {
         Write-Host "`nPin - Quick Directory Navigation" -ForegroundColor Cyan
         Write-Host "Commands:" -ForegroundColor White
@@ -742,6 +753,11 @@ function pin {
     }
 }
 function pins { pin @args }
+
+
+function .. { cd .. }
+function ... { cd ../.. }
+function .... { cd ../../.. }
 
 '@
 

@@ -14,9 +14,24 @@ A streamlined setup to supercharge your Windows PowerShell experience by combini
    # Run the local script or download and run
    powershell -ExecutionPolicy Bypass -File "./ohmyposh-setup.ps1"
    ```
-   *Note: The script will install Oh My Posh and PSReadLine if they are missing. It may require admin permissions for these installations.*
+   *Note: The script will install and configure Oh My Posh and PSReadLine automatically.*
 
 ## 🌟 Key Features
+
+### ⚡ Enhanced Productivity with PSReadLine
+This setup configures **PSReadLine** to make your terminal work for you:
+- **Command Search**: Start typing a command and press **Up/Down Arrow** to find it in your history.
+- **Auto-Suggestions**: As you type, use **Right Arrow** to complete or **F2** to toggle the suggestions menu.
+- **Smart Navigation**: Shorthand for jumping back folders:
+  - `..` → Back 1 folder
+  - `...` → Back 2 folders
+  - `....` → Back 3 folders
+
+### 📌 Directory Pins (Navigation)
+- **`pin <name>`**: Fast jump to a saved directory.
+- **`pin -a <name>`**: Save the current directory as a pin.
+- **`pin`**: Open an interactive menu to navigate, search, or remove pins.
+- **`pin -h`**: Show detailed help.
 
 ### 🛠️ Git Aliases (OMZ Style)
 Access over 100+ Git shorthands to speed up your workflow:
@@ -25,13 +40,7 @@ Access over 100+ Git shorthands to speed up your workflow:
 - `gcam "msg"` → `git commit -am "msg"`
 - `gpsh` → `git push`
 
-### 📌 Directory Pins (Navigation)
-- **`pin <name>`**: Fast jump to a saved directory.
-- **`pin -a <name>`**: Save the current directory as a pin.
-- **`pin`**: Open an interactive menu to navigate, search, or remove pins.
-- **`pin -h`**: Show detailed help.
-
-### 👤 Profile & SSH Management Github / Git
+### 👤 Profile & SSH Management (Github / Git)
 - **`gprof`**: Manage multiple Git identities (e.g., Personal vs. Work).
 - **`gprof <id> -Name "John" -Email "john@work.com"`**: Save a profile.
 - **`gprof <id>`**: Switch your global Git identity instantly.
