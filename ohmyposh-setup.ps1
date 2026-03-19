@@ -4,13 +4,14 @@ winget install JanDeDobbeleer.OhMyPosh --source winget
 
 winget upgrade JanDeDobbeleer.OhMyPosh --source winget
 
-$themesPath = "$HOME\OhMyPoshThemes"
+$OhMyPoshConfig = "$HOME\OhMyPoshConfig"
 
-if (-not (Test-Path $themesPath)) {
-    New-Item -ItemType directory -Path $themesPath -Force
+if (-not (Test-Path $OhMyPoshConfig)) {
+    New-Item -ItemType directory -Path $OhMyPoshConfig -Force
 }
 
-$env:POSH_THEMES_PATH = $themesPath
+$POSH_THEMES_PATH = "$OhMyPoshConfig\themes"
+$POSH_PINS_PATH = "$OhMyPoshConfig\pins"
 
 $psrlInstalled = Get-Module -ListAvailable -Name PSReadLine | Sort-Object Version -Descending | Select-Object -First 1
 
@@ -42,16 +43,21 @@ else {
         Write-Host "Administrator permissions required to install PSReadLine. Run PowerShell as administrator." -ForegroundColor Red
     }
 }
-
-Invoke-WebRequest https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/paradox.omp.json -OutFile "$env:POSH_THEMES_PATH\paradox.omp.json"
-Set-Content "$HOME\OhMyPoshThemes\.current_theme" "$env:POSH_THEMES_PATH\paradox.omp.json"
-oh-my-posh init pwsh --config "$env:POSH_THEMES_PATH\paradox.omp.json" | Invoke-Expression
+if (-not (Test-Path $POSH_THEMES_PATH)) {
+    New-Item -ItemType directory -Path $POSH_THEMES_PATH -Force
+}
+if (-not (Test-Path $POSH_PINS_PATH)) {
+    New-Item -ItemType directory -Path $POSH_PINS_PATH -Force
+}
+Invoke-WebRequest https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/paradox.omp.json -OutFile "$POSH_THEMES_PATH\paradox.omp.json"
+Set-Content "$POSH_THEMES_PATH\.current_theme" "$POSH_THEMES_PATH\paradox.omp.json"
+oh-my-posh init pwsh --config "$POSH_THEMES_PATH\paradox.omp.json" | Invoke-Expression
 
 $profilePath = $PROFILE
 
 $gitAliases = @'
 CLS
-$themeConfigFile = "$HOME\OhMyPoshThemes\.current_theme"
+$themeConfigFile = "$HOME\OhMyPoshConfig\themes\.current_theme"
 if (Test-Path $themeConfigFile) {
     $savedTheme = Get-Content $themeConfigFile -Raw
     $savedTheme = $savedTheme.Trim()
@@ -59,12 +65,12 @@ if (Test-Path $themeConfigFile) {
         oh-my-posh init pwsh --config $savedTheme | Invoke-Expression
     } else {
         Write-Host "Saved theme not found: $savedTheme. Using default theme." -ForegroundColor Yellow
-        oh-my-posh init pwsh --config "$HOME\OhMyPoshThemes\paradox.omp.json" | Invoke-Expression
+        oh-my-posh init pwsh --config "$HOME\OhMyPoshConfig\themes\paradox.omp.json" | Invoke-Expression
     }
 } else {
     New-Item -ItemType file -Path $themeConfigFile -Force
     Write-Host "Config file created" -ForegroundColor Cyan
-    oh-my-posh init pwsh --config "$HOME\OhMyPoshThemes\paradox.omp.json" | Invoke-Expression
+    oh-my-posh init pwsh --config "$HOME\OhMyPoshConfig\themes\paradox.omp.json" | Invoke-Expression
 }
 
 # ---------- Helpers -----------------------------------------
@@ -270,7 +276,7 @@ function gwtmv   { git worktree move @args }
 function gwtrm   { git worktree remove @args }
 
 
-function ghep {
+function ghelp {
     param(
         [string]$Category = "",
         [string]$Search   = ""
@@ -514,7 +520,7 @@ function ghep {
         }
         Write-Host ""
         Write-Host "  $($aliases.Count) aliases total" -ForegroundColor DarkGray
-        Write-Host '  Usage: ghep [category]   |   ghep -Search [term]' -ForegroundColor DarkGray
+        Write-Host '  Usage: ghelp [category]   |   ghelp -Search [term]' -ForegroundColor DarkGray
     }
 
     Write-Host ""
@@ -522,7 +528,7 @@ function ghep {
 
 
 function gthemes {
-    $themes = @(Get-ChildItem "$HOME\OhMyPoshThemes\" -Filter *.omp.json | Select-Object -ExpandProperty Name)
+    $themes = @(Get-ChildItem "$HOME\OhMyPoshConfig\themes" -Filter *.omp.json | Select-Object -ExpandProperty Name)
     $themes += "Open themes folder"
     if ($themes.Count -eq 1) { Write-Host "No themes installed." -ForegroundColor Yellow; return }
 
@@ -544,15 +550,148 @@ function gthemes {
 
     $sel = $themes[$index]
     if ($sel -eq "Open themes folder") {
-        explorer "$HOME\OhMyPoshThemes\"
+        Write-Host ('You can download more themes from https://ohmyposh.dev/docs/themes') -ForegroundColor Green
+        explorer "$HOME\OhMyPoshConfig\themes"
         return
     }
 
-    $tp = Join-Path "$HOME\OhMyPoshThemes\" $sel
-    $tp | Set-Content "$HOME\OhMyPoshThemes\.current_theme"
+    $tp = Join-Path "$HOME\OhMyPoshConfig\themes\" $sel
+    $tp | Set-Content "$HOME\OhMyPoshConfig\themes\.current_theme"
     oh-my-posh init pwsh --config $tp | Invoke-Expression
     Write-Host ('Switched to: ' + $sel + ' - saved as default theme') -ForegroundColor Green
 }
+
+
+$PinsDir  = "$HOME\OhMyPoshConfig\pins"
+$PinsFile = "$PinsDir\OhMyPoshPins.json"
+
+# Ensure pins directory and file exist
+if (-not (Test-Path $PinsDir)) { New-Item -ItemType Directory -Path $PinsDir -Force | Out-Null }
+if (-not (Test-Path $PinsFile)) { "{}" | Set-Content $PinsFile }
+
+function Get-Pins {
+    if (-not (Test-Path $PinsFile)) { return @{} }
+    try {
+        $content = Get-Content $PinsFile -Raw
+        if ([string]::IsNullOrWhiteSpace($content)) { return @{} }
+        $parsed = ConvertFrom-Json $content
+        $pins = @{}
+
+        if ($Pins.Count -eq 0) {
+            Write-Host "0 pins found." -ForegroundColor Yellow
+        }
+
+        foreach ($prop in $parsed.PSObject.Properties) { $pins[$prop.Name] = $prop.Value }
+        return $pins
+    } catch { return @{} }
+}
+
+function Save-Pins {
+    param([hashtable]$Pins)
+    $parentDir = Split-Path $PinsFile -Parent
+    if (-not (Test-Path $parentDir)) { New-Item -ItemType Directory -Path $parentDir -Force | Out-Null }
+    $Pins | ConvertTo-Json -Depth 4 | Set-Content $PinsFile -Force
+}
+
+function pin {
+    param(
+        [Alias('a')]
+        [switch]$Add,
+        [Alias('r')]
+        [switch]$Remove,
+        [Alias('g')]
+        [switch]$Get,
+        [Alias('h')]
+        [switch]$Help,
+        [Parameter(Position=0)]
+        [string]$Name,
+        [Parameter(Position=1)]
+        [string]$Path
+    )
+
+    $Pins = Get-Pins
+
+    if ($Help -or ($Name -eq "help")) {
+        Write-Host "`nPin - Quick Directory Navigation" -ForegroundColor Cyan
+        Write-Host "Commands:" -ForegroundColor White
+        Write-Host "  pin                  - Open interactive menu" -ForegroundColor Yellow
+        Write-Host "  pin <name>           - Jump to a pinned directory" -ForegroundColor Yellow
+        Write-Host "  pin -a <name>        - Pin current directory" -ForegroundColor Yellow
+        Write-Host "  pin -a <name> <path> - Pin specific directory" -ForegroundColor Yellow
+        Write-Host "  pin -r <name>        - Remove a pin" -ForegroundColor Yellow
+        Write-Host "  pin -g               - Get all pins" -ForegroundColor Yellow
+        Write-Host "  pin -h / pin help    - Show this help`n" -ForegroundColor Yellow
+        return
+    }
+
+    if ($Get) {
+        if ($Pins.Count -eq 0) {
+            Write-Host "0 pins found." -ForegroundColor Yellow
+        } else {
+            Write-Host "Pins ($($Pins.Count)):" -ForegroundColor Cyan
+            foreach ($key in ($Pins.Keys | Sort-Object)) {
+                Write-Host "  $key -> $($Pins[$key])" -ForegroundColor Green
+            }
+        }
+        return
+    }
+
+    if ($Add) {
+        if (-not $Name) { Write-Host "Error: Name required. Usage: pin -a <name>" -ForegroundColor Red; return }
+        if ($Pins.ContainsKey($Name)) { Write-Host "Pin '$Name' already exists." -ForegroundColor Yellow; return }
+        if ($Path) { if (-not (Test-Path $Path)) { Write-Host "Error: Folder '$Path' does not exist." -ForegroundColor Red; return } }
+
+        $Pins[$Name] = if ($Path) { $Path } else { $pwd.path }
+        Save-Pins $Pins
+        Write-Host "Pinned '$Name' -> '$($Pins[$Name])'" -ForegroundColor Green
+        return
+    }
+
+    if ($Remove) {
+        if (-not $Name) { Write-Host "Error: Name required. Usage: pin -r <name>" -ForegroundColor Red; return }
+        if (-not $Pins.ContainsKey($Name)) { Write-Host "Pin '$Name' not found." -ForegroundColor Yellow; return }
+        $Pins.Remove($Name)
+        Save-Pins $Pins
+        Write-Host "Removed pin '$Name'." -ForegroundColor Green
+        return
+    }
+
+    if ($Name) {
+        if ($Pins.ContainsKey($Name)) { Set-Location $Pins[$Name]; return }
+        else { Write-Host "Pin '$Name' not found. Opening menu..." -ForegroundColor Yellow }
+    }
+
+    if ($Pins.Count -eq 0) {
+        Write-Host "0 pins found. Use 'pin -a <name>' to add one." -ForegroundColor Yellow
+        return
+    }
+
+    $Items = $Pins.GetEnumerator() | ForEach-Object { [pscustomobject]@{ Name = $_.Key; Path = $_.Value } } | Sort-Object Name
+    $index = 0
+    while ($true) {
+        Clear-Host
+        Write-Host "Pins Menu (Up/Down: Navigate, Enter: Go, R: Remove, ESC: Exit)" -ForegroundColor Cyan
+        for ($i = 0; $i -lt $Items.Count; $i++) {
+            if ($i -eq $index) { Write-Host ("> {0} -> {1}" -f $Items[$i].Name, $Items[$i].Path) -ForegroundColor Green }
+            else { Write-Host ("  {0} -> {1}" -f $Items[$i].Name, $Items[$i].Path) -ForegroundColor White }
+        }
+        $key = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown").VirtualKeyCode
+        if ($key -eq 38) { if ($index -gt 0) { $index-- } }
+        elseif ($key -eq 40) { if ($index -lt ($Items.Count - 1)) { $index++ } }
+        elseif ($key -eq 13) { Set-Location $Items[$index].Path; return }
+        elseif ($key -eq 82) { # R key
+            $toRemove = $Items[$index].Name
+            $Pins.Remove($toRemove)
+            Save-Pins $Pins
+            $Items = $Pins.GetEnumerator() | ForEach-Object { [pscustomobject]@{ Name = $_.Key; Path = $_.Value } } | Sort-Object Name
+            if ($Items.Count -eq 0) { return }
+            if ($index -ge $Items.Count) { $index = $Items.Count - 1 }
+        }
+        elseif ($key -eq 27) { return }
+    }
+}
+function pins { pin @args }
+
 '@
 
 
@@ -567,9 +706,8 @@ Write-Host ('Tool installed successfully, open a new terminal to start using it'
 
 Write-Host ('Change the theme by running the gthemes command') -ForegroundColor Blue
 
-Write-Host ('List all the aliases by running the ghep command') -ForegroundColor Green
-Write-Host ('Search for a specific alias by running the ghep -Search command') -ForegroundColor Green
-Write-Host ('Search for a specific category by running the ghep [category] command') -ForegroundColor Green
+Write-Host ('List all the aliases by running the ghelp command') -ForegroundColor Green
+Write-Host ('Manage directory pins with the pin command (pin -h for help)') -ForegroundColor Green
 
 
 Write-Host ('Change terminal font https://ohmyposh.dev/docs/installation/fonts') -ForegroundColor Yellow
