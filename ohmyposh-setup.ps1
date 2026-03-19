@@ -122,6 +122,8 @@ function gssh     {
     $sshFile = "$HOME\.ssh\id_ed25519.pub"
     if (-not (Test-Path $sshFile)) { $sshFile = "$HOME\.ssh\id_rsa.pub" }
     if (Test-Path $sshFile) {
+        $userEmail = git config --global user.email
+       ssh-keygen -t ed25519 -C $userEmail
         Write-Host "Copying SSH key to clipboard... ($sshFile)" -ForegroundColor Cyan
         Get-Content $sshFile | clip
         Write-Host "Key content:" -ForegroundColor Yellow
