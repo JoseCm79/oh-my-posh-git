@@ -109,6 +109,54 @@ function grhk    { git reset --keep @args }
 function grhs    { git reset --soft @args }
 function gru     { git reset -- @args }
 
+# Config / SSH
+function gssh     {
+    $sshFile = "$HOME\.ssh\id_ed25519.pub"
+    if (-not (Test-Path $sshFile)) { $sshFile = "$HOME\.ssh\id_rsa.pub" }
+    if (Test-Path $sshFile) {
+        Write-Host "Copying SSH key to clipboard... ($sshFile)" -ForegroundColor Cyan
+        Get-Content $sshFile | clip
+        Write-Host "Key content:" -ForegroundColor Yellow
+        Get-Content $sshFile
+    } else {
+        Write-Host "No SSH public key found (RSA/Ed25519)." -ForegroundColor Red
+        Write-Host "To generate one, run: ssh-keygen -t ed25519 -C 'your-email@example.com'" -ForegroundColor Yellow
+    }
+}
+function gconfig  {
+    param([string]$name, [string]$email)
+    if ($name)  { git config --global user.name $name; Write-Host "Set user.name to $name" -ForegroundColor Green }
+    if ($email) { git config --global user.email $email; Write-Host "Set user.email to $email" -ForegroundColor Green }
+    Write-Host "`nCurrent Configuration:" -ForegroundColor Cyan
+    Write-Host "  Name:  $(git config user.name)" -ForegroundColor White
+    Write-Host "  Email: $(git config user.email)" -ForegroundColor White
+}
+function gprof {
+    param([string]$Id, [string]$Name, [string]$Email)
+    $file = "$HOME\OhMyPoshConfig\git_profiles.json"
+    if (-not (Test-Path $file)) { "{}" | Set-Content $file }
+    $profs = Get-Content $file -Raw | ConvertFrom-Json
+    $pMap = @{}
+    if ($profs) { $profs.PSObject.Properties | ForEach-Object { $pMap[$_.Name] = $_.Value } }
+
+    if (-not $Id) {
+        if ($pMap.Count -eq 0) { Write-Host "No profiles. Add one: gprof work -Name 'Me' -Email 'me@work.com'" -ForegroundColor Yellow; return }
+        Write-Host "Git Profiles (gprof <id>):" -ForegroundColor Cyan
+        foreach ($k in $pMap.Keys) { Write-Host "  $k : $($pMap[$k].name) <$($pMap[$k].email)>" -ForegroundColor White }
+        return
+    }
+    if ($Name -and $Email) {
+        $pMap[$Id] = @{ name = $Name; email = $Email }
+        $pMap | ConvertTo-Json | Set-Content $file
+        Write-Host "Profile '$Id' saved." -ForegroundColor Green; return
+    }
+    if ($pMap.ContainsKey($Id)) {
+        git config --global user.name $pMap[$Id].name
+        git config --global user.email $pMap[$Id].email
+        Write-Host "Switched to: $($pMap[$Id].name) <$($pMap[$Id].email)>" -ForegroundColor Green
+    } else { Write-Host "Profile '$Id' not found." -ForegroundColor Red }
+}
+
 # Misc
 function ghh     { git help @args }
 function gignore   { git update-index --assume-unchanged @args }
@@ -309,6 +357,9 @@ function ghelp {
         [pscustomobject]@{ Alias='gcount';      Command='git shortlog --summary -n';                  Cat='basic'    }
         [pscustomobject]@{ Alias='gsi';         Command='git submodule init';                         Cat='basic'    }
         [pscustomobject]@{ Alias='gsu';         Command='git submodule update';                       Cat='basic'    }
+        [pscustomobject]@{ Alias='gssh';        Command='show/copy SSH public key';                   Cat='config'   }
+        [pscustomobject]@{ Alias='gconfig';     Command='git config user.name/email helper';          Cat='config'   }
+        [pscustomobject]@{ Alias='gprof';       Command='manage/switch git profiles';                 Cat='config'   }
         # bisect
         [pscustomobject]@{ Alias='gbs';         Command='git bisect [args]';                          Cat='bisect'   }
         [pscustomobject]@{ Alias='gbsb';        Command='git bisect bad';                             Cat='bisect'   }
@@ -375,6 +426,9 @@ function ghelp {
         [pscustomobject]@{ Alias='glods';       Command='git log --graph --date=short';               Cat='log'      }
         [pscustomobject]@{ Alias='glp';         Command='git log --pretty=[format]';                  Cat='log'      }
         [pscustomobject]@{ Alias='gk';          Command='open gitk --all --branches';                 Cat='log'      }
+        # oh-my-posh / pins
+        [pscustomobject]@{ Alias='pin';         Command='manage directory pins (pin -h for help)';    Cat='pins'     }
+        [pscustomobject]@{ Alias='gthemes';     Command='switch oh-my-posh themes';                   Cat='themes'   }
         # fetch
         [pscustomobject]@{ Alias='gf';          Command='git fetch';                                  Cat='remote'   }
         [pscustomobject]@{ Alias='gfa';         Command='git fetch --all --prune --jobs=10';          Cat='remote'   }
@@ -441,6 +495,9 @@ function ghelp {
     # Category map: short name -> display label
     $catLabels = [ordered]@{
         basic    = "Basic / Status / Reset"
+        config   = "Config / SSH"
+        pins     = "Pins & Navigation"
+        themes   = "Theming"
         bisect   = "Bisect"
         add      = "Add"
         branch   = "Branch / Switch / Merge"
@@ -568,7 +625,6 @@ $PinsFile = "$PinsDir\OhMyPoshPins.json"
 # Ensure pins directory and file exist
 if (-not (Test-Path $PinsDir)) { New-Item -ItemType Directory -Path $PinsDir -Force | Out-Null }
 if (-not (Test-Path $PinsFile)) { "{}" | Set-Content $PinsFile }
-
 function Get-Pins {
     if (-not (Test-Path $PinsFile)) { return @{} }
     try {
@@ -576,11 +632,6 @@ function Get-Pins {
         if ([string]::IsNullOrWhiteSpace($content)) { return @{} }
         $parsed = ConvertFrom-Json $content
         $pins = @{}
-
-        if ($Pins.Count -eq 0) {
-            Write-Host "0 pins found." -ForegroundColor Yellow
-        }
-
         foreach ($prop in $parsed.PSObject.Properties) { $pins[$prop.Name] = $prop.Value }
         return $pins
     } catch { return @{} }
