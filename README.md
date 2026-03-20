@@ -2,6 +2,19 @@
 
 A streamlined setup to supercharge your Windows PowerShell experience by combining **Oh My Posh** themes with a powerful set of **Git aliases** (inspired by Oh My Zsh).
 
+> [!IMPORTANT]
+> **It is essential to have the latest version of PowerShell (PowerShell 7+)** installed for all features (especially PSReadLine predictions and Oh My Posh) to function correctly.
+>
+> To check your current version, run:
+> ```powershell
+> $PSVersionTable.PSVersion
+> ```
+>
+> You can install or update it by running:
+> ```powershell
+> winget install Microsoft.PowerShell
+> ```
+
 ## 🚀 Quick Start
 
 1. **Allow script execution in Powershell**:
@@ -78,7 +91,6 @@ Access over 100+ Git shorthands to speed up your workflow:
 ## 📦 Prerequisites
 
 - **Windows 10/11**
-- **PowerShell 7+** (Recommended) or Windows PowerShell
 - **App Installer (Winget)**
 
 ---

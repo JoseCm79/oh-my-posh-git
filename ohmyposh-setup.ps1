@@ -55,6 +55,8 @@ else {
 
 Import-Module PSReadLine
 
+Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
+
 Set-PSReadLineOption -PredictionSource History
 Set-PSReadLineOption -PredictionViewStyle ListView
 
@@ -77,7 +79,8 @@ $profilePath = $PROFILE
 $gitAliases = @'
 CLS
 
-Import-Module PSReadLine
+
+Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
 
 Set-PSReadLineOption -PredictionSource History
 Set-PSReadLineOption -PredictionViewStyle ListView
