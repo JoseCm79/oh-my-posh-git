@@ -21,11 +21,19 @@ if ($psrlInstalled) {
         Write-Host "PSReadLine installed (v$($psrlInstalled.Version)), but a newer version is available (v$latestVersion). Updating..." -ForegroundColor Yellow
         $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
         if ($isAdmin) {
-            Update-Module PSReadLine -Force
-            Write-Host "PSReadLine updated to v$latestVersion." -ForegroundColor Green
+            try {
+                Install-Module PSReadLine -Force -AllowClobber -SkipPublisherCheck -Scope AllUsers -ErrorAction Stop
+                Write-Host "PSReadLine updated to v$latestVersion." -ForegroundColor Green
+            }
+            catch {
+                Write-Host "Failed to update PSReadLine system-wide: $($_.Exception.Message)" -ForegroundColor Red
+                Write-Host "Trying CurrentUser scope as fallback..." -ForegroundColor Yellow
+                Install-Module PSReadLine -Force -AllowClobber -SkipPublisherCheck -Scope CurrentUser
+            }
         }
         else {
-            Write-Host "Administrator permissions required to update PSReadLine. Run PowerShell as administrator." -ForegroundColor Red
+            Write-Host "Administrator permissions required to update PSReadLine system-wide. Trying CurrentUser scope..." -ForegroundColor Yellow
+            Install-Module PSReadLine -Force -AllowClobber -SkipPublisherCheck -Scope CurrentUser
         }
     }
     else {
@@ -36,17 +44,19 @@ else {
     Write-Host "PSReadLine is not installed. Checking permissions..." -ForegroundColor Yellow
     $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
     if ($isAdmin) {
-        Install-Module PSReadLine -Force -SkipPublisherCheck
+        Install-Module PSReadLine -Force -AllowClobber -SkipPublisherCheck -Scope AllUsers
         Write-Host "PSReadLine installed successfully." -ForegroundColor Green
     }
     else {
-        Write-Host "Administrator permissions required to install PSReadLine. Run PowerShell as administrator." -ForegroundColor Red
+        Install-Module PSReadLine -Force -AllowClobber -SkipPublisherCheck -Scope CurrentUser
+        Write-Host "PSReadLine installed successfully in CurrentUser scope." -ForegroundColor Green
     }
 }
 
 Import-Module PSReadLine
 
 Set-PSReadLineOption -PredictionSource History
+Set-PSReadLineOption -PredictionViewStyle ListView
 
 Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward
 Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
@@ -70,6 +80,7 @@ CLS
 Import-Module PSReadLine
 
 Set-PSReadLineOption -PredictionSource History
+Set-PSReadLineOption -PredictionViewStyle ListView
 
 Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward
 Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
