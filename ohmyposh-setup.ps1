@@ -22,11 +22,6 @@ if ($psrlInstalled) {
         $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
         if ($isAdmin) {
             Update-Module PSReadLine -Force
-            Set-PSReadLineOption -PredictionSource History
-            Set-PSReadLineOption -PredictionViewStyle ListView
-
-            Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward
-            Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
             Write-Host "PSReadLine updated to v$latestVersion." -ForegroundColor Green
         }
         else {
@@ -49,6 +44,13 @@ else {
     }
 }
 
+Import-Module PSReadLine
+
+Set-PSReadLineOption -PredictionSource History
+Set-PSReadLineOption -PredictionViewStyle ListView
+
+Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward
+Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
 
 
 if (-not (Test-Path $POSH_THEMES_PATH)) {
@@ -65,6 +67,15 @@ $profilePath = $PROFILE
 
 $gitAliases = @'
 CLS
+
+Import-Module PSReadLine
+
+Set-PSReadLineOption -PredictionSource History
+Set-PSReadLineOption -PredictionViewStyle ListView
+
+Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward
+Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
+
 $themeConfigFile = "$HOME\OhMyPoshConfig\themes\.current_theme"
 if (Test-Path $themeConfigFile) {
     $savedTheme = Get-Content $themeConfigFile -Raw
